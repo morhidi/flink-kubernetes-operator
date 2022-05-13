@@ -274,4 +274,19 @@ public class ApplicationObserverTest {
                         });
         assertEquals(podFailedMessage, exception.getMessage());
     }
+
+    @Test
+    public void observeClusterInfo() {
+        TestingFlinkService flinkService = new TestingFlinkService();
+        ApplicationObserver observer =
+                new ApplicationObserver(
+                        null, flinkService, configManager, new TestingStatusHelper<>());
+        FlinkDeployment deployment = TestUtils.buildApplicationCluster();
+        bringToReadyStatus(deployment);
+        observer.observe(deployment, readyContext);
+        assertEquals(
+                JobManagerDeploymentStatus.READY,
+                deployment.getStatus().getJobManagerDeploymentStatus());
+        assertEquals(TestingFlinkService.CLUSTER_INFO, deployment.getStatus().getClusterInfo());
+    }
 }

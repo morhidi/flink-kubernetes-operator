@@ -57,6 +57,8 @@ import org.apache.flink.runtime.rest.FileUpload;
 import org.apache.flink.runtime.rest.RestClient;
 import org.apache.flink.runtime.rest.handler.async.AsynchronousOperationResult;
 import org.apache.flink.runtime.rest.handler.async.TriggerResponse;
+import org.apache.flink.runtime.rest.messages.DashboardConfiguration;
+import org.apache.flink.runtime.rest.messages.DashboardConfigurationHeaders;
 import org.apache.flink.runtime.rest.messages.EmptyMessageParameters;
 import org.apache.flink.runtime.rest.messages.EmptyRequestBody;
 import org.apache.flink.runtime.rest.messages.TriggerId;
@@ -103,6 +105,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -671,6 +675,35 @@ public class FlinkService {
             LOG.info("Savepoint result: " + savepoint);
             return SavepointFetchResult.completed(savepoint);
         }
+    }
+
+    public Map<String, String> getClusterinfo(Configuration conf) throws Exception {
+        Map<String, String> runtimeVersion = new HashMap<>();
+
+        try (RestClusterClient<String> clusterClient =
+                (RestClusterClient<String>) getClusterClient(conf)) {
+
+            DashboardConfiguration dashboardConfiguration =
+                    clusterClient
+                            .sendRequest(
+                                    DashboardConfigurationHeaders.getInstance(),
+                                    EmptyMessageParameters.getInstance(),
+                                    EmptyRequestBody.getInstance())
+                            .get(
+                                    configManager
+                                            .getOperatorConfiguration()
+                                            .getFlinkClientTimeout()
+                                            .toSeconds(),
+                                    TimeUnit.SECONDS);
+
+            runtimeVersion.put(
+                    DashboardConfiguration.FIELD_NAME_FLINK_VERSION,
+                    dashboardConfiguration.getFlinkVersion());
+            runtimeVersion.put(
+                    DashboardConfiguration.FIELD_NAME_FLINK_REVISION,
+                    dashboardConfiguration.getFlinkRevision());
+        }
+        return runtimeVersion;
     }
 
     public PodList getJmPodList(FlinkDeployment deployment, Configuration conf) {

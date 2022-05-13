@@ -48,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** The base observer. */
@@ -85,14 +86,27 @@ public abstract class AbstractDeploymentObserver implements Observer<FlinkDeploy
         if (!isJmDeploymentReady(flinkApp)) {
             observeJmDeployment(flinkApp, context, observeConfig);
         }
+
         if (isJmDeploymentReady(flinkApp)) {
+            observeClusterInfo(flinkApp, observeConfig);
             if (observeFlinkCluster(flinkApp, context, observeConfig)) {
                 if (reconciliationStatus.getState() != ReconciliationState.ROLLED_BACK) {
                     reconciliationStatus.markReconciledSpecAsStable();
                 }
             }
         }
+
         clearErrorsIfDeploymentIsHealthy(flinkApp);
+    }
+
+    private void observeClusterInfo(FlinkDeployment flinkApp, Configuration configuration) {
+        try {
+            Map<String, String> clusterInfo = flinkService.getClusterinfo(configuration);
+            flinkApp.getStatus().setClusterInfo(clusterInfo);
+            logger.debug("ClusterInfo: {}", clusterInfo);
+        } catch (Exception e) {
+            logger.warn("Exception while fetching cluster info", e);
+        }
     }
 
     protected void observeJmDeployment(
