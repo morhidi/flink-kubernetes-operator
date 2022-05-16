@@ -58,7 +58,6 @@ import org.apache.flink.runtime.rest.RestClient;
 import org.apache.flink.runtime.rest.handler.async.AsynchronousOperationResult;
 import org.apache.flink.runtime.rest.handler.async.TriggerResponse;
 import org.apache.flink.runtime.rest.messages.DashboardConfiguration;
-import org.apache.flink.runtime.rest.messages.DashboardConfigurationHeaders;
 import org.apache.flink.runtime.rest.messages.EmptyMessageParameters;
 import org.apache.flink.runtime.rest.messages.EmptyRequestBody;
 import org.apache.flink.runtime.rest.messages.TriggerId;
@@ -677,16 +676,16 @@ public class FlinkService {
         }
     }
 
-    public Map<String, String> getClusterinfo(Configuration conf) throws Exception {
+    public Map<String, String> getClusterInfo(Configuration conf) throws Exception {
         Map<String, String> runtimeVersion = new HashMap<>();
 
         try (RestClusterClient<String> clusterClient =
                 (RestClusterClient<String>) getClusterClient(conf)) {
 
-            DashboardConfiguration dashboardConfiguration =
+            CustomDashboardConfiguration dashboardConfiguration =
                     clusterClient
                             .sendRequest(
-                                    DashboardConfigurationHeaders.getInstance(),
+                                    CustomDashboardConfigurationHeaders.getInstance(),
                                     EmptyMessageParameters.getInstance(),
                                     EmptyRequestBody.getInstance())
                             .get(

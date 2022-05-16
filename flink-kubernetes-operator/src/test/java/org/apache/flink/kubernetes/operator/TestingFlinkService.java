@@ -355,7 +355,7 @@ public class TestingFlinkService extends FlinkService {
     }
 
     @Override
-    public Map<String, String> getClusterinfo(Configuration conf) throws Exception {
+    public Map<String, String> getClusterInfo(Configuration conf) throws Exception {
         return CLUSTER_INFO;
     }
 }

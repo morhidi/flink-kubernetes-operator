@@ -90,9 +90,11 @@ public class ApplicationObserverTest {
                 JobManagerDeploymentStatus.DEPLOYED_NOT_READY,
                 deployment.getStatus().getJobManagerDeploymentStatus());
         assertNull(deployment.getStatus().getReconciliationStatus().getLastStableSpec());
+        assertNull(deployment.getStatus().getClusterInfo());
 
         // Stable ready
         observer.observe(deployment, readyContext);
+        assertEquals(TestingFlinkService.CLUSTER_INFO, deployment.getStatus().getClusterInfo());
         assertEquals(
                 JobManagerDeploymentStatus.READY,
                 deployment.getStatus().getJobManagerDeploymentStatus());
@@ -273,20 +275,5 @@ public class ApplicationObserverTest {
                                     deployment, TestUtils.createContextWithInProgressDeployment());
                         });
         assertEquals(podFailedMessage, exception.getMessage());
-    }
-
-    @Test
-    public void observeClusterInfo() {
-        TestingFlinkService flinkService = new TestingFlinkService();
-        ApplicationObserver observer =
-                new ApplicationObserver(
-                        null, flinkService, configManager, new TestingStatusHelper<>());
-        FlinkDeployment deployment = TestUtils.buildApplicationCluster();
-        bringToReadyStatus(deployment);
-        observer.observe(deployment, readyContext);
-        assertEquals(
-                JobManagerDeploymentStatus.READY,
-                deployment.getStatus().getJobManagerDeploymentStatus());
-        assertEquals(TestingFlinkService.CLUSTER_INFO, deployment.getStatus().getClusterInfo());
     }
 }

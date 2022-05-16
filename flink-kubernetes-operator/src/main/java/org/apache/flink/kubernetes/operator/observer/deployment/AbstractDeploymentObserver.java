@@ -88,10 +88,11 @@ public abstract class AbstractDeploymentObserver implements Observer<FlinkDeploy
         }
 
         if (isJmDeploymentReady(flinkApp)) {
-            observeClusterInfo(flinkApp, observeConfig);
-            if (observeFlinkCluster(flinkApp, context, observeConfig)) {
-                if (reconciliationStatus.getState() != ReconciliationState.ROLLED_BACK) {
-                    reconciliationStatus.markReconciledSpecAsStable();
+            if (observeClusterInfo(flinkApp, observeConfig)) {
+                if (observeFlinkCluster(flinkApp, context, observeConfig)) {
+                    if (reconciliationStatus.getState() != ReconciliationState.ROLLED_BACK) {
+                        reconciliationStatus.markReconciledSpecAsStable();
+                    }
                 }
             }
         }
@@ -99,14 +100,19 @@ public abstract class AbstractDeploymentObserver implements Observer<FlinkDeploy
         clearErrorsIfDeploymentIsHealthy(flinkApp);
     }
 
-    private void observeClusterInfo(FlinkDeployment flinkApp, Configuration configuration) {
+    private boolean observeClusterInfo(FlinkDeployment flinkApp, Configuration configuration) {
+        if (flinkApp.getStatus().getClusterInfo() != null) {
+            return true;
+        }
         try {
-            Map<String, String> clusterInfo = flinkService.getClusterinfo(configuration);
+            Map<String, String> clusterInfo = flinkService.getClusterInfo(configuration);
             flinkApp.getStatus().setClusterInfo(clusterInfo);
             logger.debug("ClusterInfo: {}", clusterInfo);
         } catch (Exception e) {
-            logger.warn("Exception while fetching cluster info", e);
+            logger.error("Exception while fetching cluster info", e);
+            return false;
         }
+        return true;
     }
 
     protected void observeJmDeployment(
@@ -119,6 +125,8 @@ public abstract class AbstractDeploymentObserver implements Observer<FlinkDeploy
             logger.debug("Skipping observe step for suspended application deployments.");
             return;
         }
+
+        flinkApp.getStatus().setClusterInfo(null);
 
         logger.info(
                 "Observing JobManager deployment. Previous status: {}", previousJmStatus.name());
